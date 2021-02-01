@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   StyleSheet,
@@ -11,16 +11,32 @@ import {
 } from 'react-native';
 import Cita from './componentes/Citas';
 import Formulario from './componentes/Formulario';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const App = () => {
-  const [mostrarform, guardarMostrarForm] = useState(false);
-
   // def state de citas
   const [citas, setCitas] = useState([]);
+  const [mostrarform, guardarMostrarForm] = useState(false);
+
+  useEffect(() => {
+    const obtenerCitasStorage = async () => {
+      try {
+        const citasStorage = await AsyncStorage.getItem('citas');
+        if (citasStorage) {
+          setCitas(JSON.parse(citasStorage));
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    obtenerCitasStorage();
+  }, []);
 
   // Elimina los pacientes del state
   const eliminarPaciente = (id) => {
-    setCitas((citasAtuales) => citasAtuales.filter((cita) => cita.id !== id));
+    const citasFiltradas = citas.filter(cita => cita.id !== id);
+    setCitas(citasFiltradas);
+    guardarCitasStorage(JSON.stringify(citasFiltradas));
   };
 
   // muestra u oculta formulario
@@ -66,6 +82,15 @@ const App = () => {
     Keyboard.dismiss();
   };
 
+  // Almacenar las citas en storage
+  const guardarCitasStorage = async (citasJSON) => {
+    try {
+      await AsyncStorage.setItem('citas', citasJSON);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <TouchableNativeFeedback onPress={() => cerrarTeclado()}>
       <View style={styles.contenedor}>
@@ -88,6 +113,7 @@ const App = () => {
                 citas={citas}
                 setCitas={setCitas}
                 guardarMostrarForm={guardarMostrarForm}
+                guardarCitasStorage={guardarCitasStorage}
               />
             </>
           ) : (
